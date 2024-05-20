@@ -17,6 +17,7 @@ report_path = os.path.join(screenshot_folder, "report.html")
 
 # Function to take a screenshot
 def take_screenshot(file_path):
+    print(f"Taking screenshot and saving to {file_path}")
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
@@ -27,15 +28,18 @@ def take_screenshot(file_path):
     time.sleep(5)  # Wait for the page to load completely
     driver.save_screenshot(file_path)
     driver.quit()
+    print(f"Screenshot saved to {file_path}")
 
 # Function to load images
 def load_images(image_path1, image_path2):
+    print(f"Loading images from {image_path1} and {image_path2}")
     image1 = cv2.imread(image_path1)
     image2 = cv2.imread(image_path2)
     return image1, image2
 
 # Function to compute SSIM and absolute difference
 def compute_differences(image1, image2):
+    print("Computing SSIM and absolute differences")
     gray_image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
     gray_image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
     
@@ -50,6 +54,7 @@ def compute_differences(image1, image2):
 
 # Function to highlight differences
 def highlight_differences(image1, image2, diff_ssim, diff_abs):
+    print("Highlighting differences")
     # Thresholding for SSIM differences
     _, thresh_ssim = cv2.threshold(diff_ssim, 128, 255, cv2.THRESH_BINARY_INV)
     
@@ -76,8 +81,47 @@ def highlight_differences(image1, image2, diff_ssim, diff_abs):
     
     return image1, image2, mask, filled_image
 
+# Function to plot images and save them to a file
+def plot_images(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask):
+    print("Plotting images")
+    plt.figure(figsize=(12, 8))
+
+    plt.subplot(2, 4, 1)
+    plt.title("Original Image 1")
+    plt.imshow(cv2.cvtColor(image1, cv2.COLOR_BGR2RGB))
+
+    plt.subplot(2, 4, 2)
+    plt.title("Original Image 2")
+    plt.imshow(cv2.cvtColor(image2, cv2.COLOR_BGR2RGB))
+
+    plt.subplot(2, 4, 3)
+    plt.title("SSIM Difference")
+    plt.imshow(diff_ssim, cmap='gray')
+
+    plt.subplot(2, 4, 4)
+    plt.title("Absolute Difference")
+    plt.imshow(cv2.cvtColor(diff_abs, cv2.COLOR_BGR2RGB))
+
+    plt.subplot(2, 4, 5)
+    plt.title("Highlighted Differences Image 1")
+    plt.imshow(cv2.cvtColor(image1_highlighted, cv2.COLOR_BGR2RGB))
+
+    plt.subplot(2, 4, 6)
+    plt.title("Highlighted Differences Image 2")
+    plt.imshow(cv2.cvtColor(image2_highlighted, cv2.COLOR_BGR2RGB))
+
+    plt.subplot(2, 4, 7)
+    plt.title("Mask of Differences")
+    plt.imshow(cv2.cvtColor(mask, cv2.COLOR_BGR2RGB))
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(screenshot_folder, "comparison.png"))
+    plt.close()
+    print("Images plotted and saved to comparison.png")
+
 # Function to generate HTML report
 def generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask, report_path):
+    print("Generating HTML report")
     html_content = f"""
     <html>
     <head>
@@ -99,14 +143,18 @@ def generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted
         <img src="data:image/jpeg;base64,{cv2.imencode('.jpg', image2_highlighted)[1].tobytes().hex()}" />
         <h2>Mask of Differences</h2>
         <img src="data:image/jpeg;base64,{cv2.imencode('.jpg', mask)[1].tobytes().hex()}" />
+        <h2>Comparison Plot</h2>
+        <img src="comparison.png" />
     </body>
     </html>
     """
     with open(report_path, "w") as f:
         f.write(html_content)
+    print(f"HTML report generated and saved to {report_path}")
 
 # Main function
 def main():
+    print("Starting main function")
     # Create the screenshots folder if it doesn't exist
     if not os.path.exists(screenshot_folder):
         os.makedirs(screenshot_folder)
@@ -134,8 +182,11 @@ def main():
         else:
             print("Test Failed: Significant visual differences detected.")
             image1_highlighted, image2_highlighted, mask, filled_image = highlight_differences(image1, image2, diff_ssim, diff_abs)
+            plot_images(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask)
             generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask, report_path)
             exit(1)  # Exit with a non-zero status to indicate test failure
 
 if __name__ == "__main__":
     main()
+    print("Main function completed")
+
