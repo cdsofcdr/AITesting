@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from skimage.metrics import structural_similarity as ssim
+import base64
 
 # Define paths
 screenshot_folder = "screenshots"
@@ -35,6 +36,10 @@ def load_images(image_path1, image_path2):
     print(f"Loading images from {image_path1} and {image_path2}")
     image1 = cv2.imread(image_path1)
     image2 = cv2.imread(image_path2)
+    if image1 is None or image2 is None:
+        print("One of the images did not load correctly.")
+    else:
+        print("Images loaded successfully.")
     return image1, image2
 
 # Function to compute SSIM and absolute difference
@@ -46,6 +51,7 @@ def compute_differences(image1, image2):
     # SSIM
     score, diff_ssim = ssim(gray_image1, gray_image2, full=True)
     diff_ssim = (diff_ssim * 255).astype("uint8")
+    print(f"SSIM score: {score}")
     
     # Absolute difference
     diff_abs = cv2.absdiff(image1, image2)
@@ -115,13 +121,20 @@ def plot_images(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_
     plt.imshow(cv2.cvtColor(mask, cv2.COLOR_BGR2RGB))
 
     plt.tight_layout()
-    plt.savefig(os.path.join(screenshot_folder, "comparison.png"))
+    comparison_image_path = os.path.join(screenshot_folder, "comparison.png")
+    plt.savefig(comparison_image_path)
     plt.close()
-    print("Images plotted and saved to comparison.png")
+    print(f"Images plotted and saved to {comparison_image_path}")
+    return comparison_image_path
 
 # Function to generate HTML report
-def generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask, report_path):
+def generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask, report_path, comparison_image_path):
     print("Generating HTML report")
+    
+    def image_to_base64(img_path):
+        with open(img_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode('utf-8')
+    
     html_content = f"""
     <html>
     <head>
@@ -130,9 +143,9 @@ def generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted
     <body>
         <h1>Visual Test Report</h1>
         <h2>Original Image 1</h2>
-        <img src="data:image/jpeg;base64,{cv2.imencode('.jpg', image1)[1].tobytes().hex()}" />
+        <img src="data:image/jpeg;base64,{image_to_base64(initial_image_path)}" />
         <h2>Original Image 2</h2>
-        <img src="data:image/jpeg;base64,{cv2.imencode('.jpg', image2)[1].tobytes().hex()}" />
+        <img src="data:image/jpeg;base64,{image_to_base64(final_image_path)}" />
         <h2>SSIM Difference</h2>
         <img src="data:image/jpeg;base64,{cv2.imencode('.jpg', diff_ssim)[1].tobytes().hex()}" />
         <h2>Absolute Difference</h2>
@@ -144,7 +157,7 @@ def generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted
         <h2>Mask of Differences</h2>
         <img src="data:image/jpeg;base64,{cv2.imencode('.jpg', mask)[1].tobytes().hex()}" />
         <h2>Comparison Plot</h2>
-        <img src="comparison.png" />
+        <img src="data:image/png;base64,{image_to_base64(comparison_image_path)}" />
     </body>
     </html>
     """
@@ -182,11 +195,10 @@ def main():
         else:
             print("Test Failed: Significant visual differences detected.")
             image1_highlighted, image2_highlighted, mask, filled_image = highlight_differences(image1, image2, diff_ssim, diff_abs)
-            plot_images(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask)
-            generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask, report_path)
+            comparison_image_path = plot_images(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask)
+            generate_html_report(image1, image2, diff_ssim, diff_abs, image1_highlighted, image2_highlighted, mask, report_path, comparison_image_path)
             exit(1)  # Exit with a non-zero status to indicate test failure
 
 if __name__ == "__main__":
     main()
     print("Main function completed")
-
