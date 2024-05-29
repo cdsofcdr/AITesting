@@ -18,6 +18,38 @@
         .green-text {
             color: green;
         }
+        .black-button {
+            background-color: black;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        #image-container {
+            position: relative;
+            display: inline-block;
+            vertical-align: top;
+        }
+        #remove-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+        }
+ 	#city-dropdown {
+            display: inline-block;
+            vertical-align: top;
+            margin-left: 20px;
+        }
     </style>
 </head>
 <body>
@@ -27,20 +59,45 @@
         <input type="text" id="username" name="username"><br><br>
         <label for="password">Password:</label>
         <input type="password" id="password" name="password"><br><br>
-        <button class="blue-button" type="submit">Login</button>
+        <button onclick="login()" class="blue-button" type="submit">Login</button>
     </form>
     <h2>Shopping List</h2>
     <ul>
-        <li class="gree-text">Milk</li>
+        <li class="green-text">Milk</li>
         <li class="green-text">Yogurt</li>
         <li class="green-text">Lettuce</li>
         <li class="red-text">Egg</li>
     </ul>
-    <br>
-     <h2>Shopping List</h2>
-    <ul>
-        <li class="green-text">Banana1</li>
-        <li class="red-text">Lettuce1</li>
-    </ul>
+    <div id="image-section">
+        <h2>Image Gallery</h2>
+        <div id="image-container">
+            <img src="images/cat1.jpg" alt="Sample Image" style="width: 150px;">
+            <button id="remove-icon" onclick="removeImage()">X</button>
+        </div>
+        <select id="city-dropdown">
+            <option value="new-york">New York</option>
+            <option value="los-angeles">Los Angeles</option>
+            <option value="chicago">Chicago</option>
+            <option value="houston">Houston</option>
+            <option value="phoenix">Phoenix</option>
+        </select>
+    </div>
+
+    <script>
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === 'hacer' && password === 'password') {
+                window.location.href = 'myhobbies.html';
+            } else {
+                alert('Invalid username or password');
+            }
+        }
+
+        function removeImage() {
+            const imageContainer = document.getElementById('image-container');
+            imageContainer.style.display = 'none';
+        }
+    </script>
 </body>
 </html>
